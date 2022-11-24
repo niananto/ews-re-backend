@@ -30,19 +30,19 @@ router.get("/data", async function (req, res, next) {
 });
 
 router.post("/upload", function (req, res, next) {
-    console.log(req.files);
-    
     if (!req.files || Object.keys(req.files).length === 0) {
         return res.status(400).send('No files were uploaded.');
     }
 
     const file = req.files.csv;
+    console.log(file.name);
+
     file.mv(__dirname+'/uploads/'+file.name, function (err, result) {
         if (err) {
             console.log(err);
             return res.status(500).send("Couldn't handle file upload");
         }
-        return res.status(200).send("File Upload Successful");
+        return res.status(200).send(file.name + " File Upload Successful");
     });
 });
 

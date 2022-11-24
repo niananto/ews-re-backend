@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const csv = require('csv-parser')
 const fs = require('fs')
 const results = [];
@@ -8,7 +10,7 @@ fs.createReadStream('assets/bed shear stress.csv')
   .on('end', () => {
     // console.log(results);
     // write into file
-    fs.writeFile('assets/currentBedShearStress.txt', JSON.stringify(results, null, ' '), function (err) {
+    fs.writeFile(process.env.PROCESSED_CSV, JSON.stringify(results, null, ' '), function (err) {
         if (err) return console.log(err);
     });
   });
