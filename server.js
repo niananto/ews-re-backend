@@ -33,6 +33,16 @@ app.use('/styles', express.static(path.join(__dirname, 'styles')));
 
 ////////////////////////////////////////////////
 
+app.get("/dummy-data", async function (req, res, next) {
+    fs.readFile(process.env.DUMMY_DATA, 'utf-8', (err, data) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Couldn't read file");
+        }
+        return res.status(200).json(JSON.parse(data));
+    });
+});
+
 app.get("/data", async function (req, res, next) {
     fs.readFile(process.env.PROCESSED_CSV, 'utf-8', (err, data) => {
         if (err) {
