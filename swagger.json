@@ -1,43 +1,52 @@
 {
-    "openapi": "3.0.3",
-    "info": {
-      "version": "1.0.0",
-      "title": "Early Warning System for River Erosion",
-      "description": "",
-      "termsOfService": "",
-      "contact": {
-        "name": ""
-      }
-    },
-    "servers": [
-        {
-          "url": "http://localhost:8080/",
-          "description": "Development server"
-        },
-        {
-          "url": "",
-          "description": "Production server"
-        }
-    ],
-    "consumes": [
-      "application/json"
-    ],
-    "produces": [
-      "application/json"
-    ],
-    "paths": {
-      "/dummy-data": {
-        "get": {
-          "description": "Get dummy data for low, moderate and high warning",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "A list of pets."
-            }
-          }
-        }
-      }
-    }
-  }
+	"openapi": "3.0.3",
+	"info": {
+		"version": "1.0.0",
+		"title": "Early Warning System for River Erosion",
+		"description": "",
+		"termsOfService": "",
+		"contact": {
+			"name": ""
+		}
+	},
+	"servers": [
+		{
+			"url": "http://localhost:8080/",
+			"description": "Local server"
+		},
+		{
+			"url": "https://backend-ews-re-niananto.onrender.com",
+			"description": "Development server"
+		},
+		{
+			"url": "",
+			"description": "Production server"
+		}
+	],
+	"consumes": ["application/json"],
+	"produces": ["application/json"],
+	"paths": {
+		"/dummy-data": {
+			"get": {
+				"description": "Get dummy data for low, moderate and high warning",
+				"produces": ["application/json"],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				}
+			}
+		},
+		"/data": {
+			"get": {
+				"description": "Get all the data for low, moderate and high warning",
+				"produces": ["application/json"],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				}
+			}
+		}
+	}
+}
