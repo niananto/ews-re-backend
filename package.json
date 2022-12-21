@@ -16,5 +16,8 @@
         "express-session": "^1.17.3",
         "nodemon": "^2.0.20",
         "uuid": "^9.0.0"
+    },
+    "devDependencies": {
+        "swagger-ui-express": "^4.6.0"
     }
 }

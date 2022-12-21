@@ -11,6 +11,8 @@ const bodyparser = require("body-parser");
 const session = require("express-session");
 const { v4:uuidv4 } = require("uuid");
 
+const swaggerUI = require("swagger-ui-express");
+
 const router = require('./router');
 
 const app = express();
@@ -24,6 +26,10 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
+
+const swaggerDocument = require('./swagger.json');
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+
 app.use('/route', router);
 
 app.set('view engine', 'ejs');
