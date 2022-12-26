@@ -55,15 +55,30 @@
         "consumes": ["application/json"],
         "parameters": [
           {
-            "topLeft": {
-              "x": 23,
-              "y": 89
+            "name": "viewArea",
+            "in": "body",
+            "description": "View area",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ViewArea"
             },
-            "bottomRight": {
-              "x": 24,
-              "y": 90
+            "examples": {
+              "ex 01": {
+                "value": {
+                  "topLeft": {
+                    "x": 23,
+                    "y": 89
+                  },
+                  "bottomRight": {
+                    "x": 24,
+                    "y": 90
+                  }
+                },
+                "summary": "Example 01"
+              }
             }
           }
+
         ],
 				"responses": {
 					"200": {
@@ -72,5 +87,34 @@
 				}
 			}
 		}
-	}
+	},
+  "definitions": {
+    "ViewArea": {
+      "type": "object",
+      "properties": {
+        "topLeft": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          }
+        },
+        "bottomRight": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  }
 }
