@@ -14,7 +14,7 @@ const { v4: uuidv4 } = require("uuid");
 const swaggerUI = require("swagger-ui-express");
 
 const router = require("./router");
-const db = require("./src/database");
+const db = require("./controllers/database");
 
 const app = express();
 app.use(express.json());
@@ -30,7 +30,7 @@ app.use(
 	})
 );
 
-const swaggerDocument = require("./swagger.json");
+const swaggerDocument = require("./api/openapi.json");
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 
 app.use("/route", router);
@@ -134,7 +134,7 @@ app.post("/admin/upload", async function (req, res, next) {
 			return res.status(500).send("Couldn't handle file upload");
 		}
 
-		require("./src/csvParser")(filepath);
+		require("./utlils/csvParser")(filepath);
 
 		return res.status(200).send(file.name + " File Upload Successful");
 	});

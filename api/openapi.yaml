@@ -1,0 +1,111 @@
+openapi: 3.0.3
+info:
+  title: EWS-RE
+  description: 'Early Warning System for River Erosion'
+  version: 1.0.0
+servers:
+  - url: https://backend-ews-re-niananto.onrender.com/
+    variables: {}
+    description: development server
+  - url: http://localhost:8080/
+    description: local server
+tags:
+  - name: data
+    description: everything about extracting data
+    # externalDocs:
+    #   description: Find out more
+    #   url: http://swagger.io
+paths:
+  /data:
+    post:
+      tags:
+        - data
+      summary: fetch data inside a view area
+      # description: Add a new pet to the store
+      operationId: fetchSpecificData
+      requestBody:
+        description: Send the view area
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ViewArea'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Data'
+        '400':
+          description: Bad Request
+  /data/dummy:
+    get:
+      tags:
+        - data
+      summary: gets some dummy data
+      operationId: fetchDummyData
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Data'
+  /data/all:
+    get:
+      tags:
+        - data
+      summary: gets all the data at once
+      operationId: fetchAllData
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Data'
+
+
+components:
+  schemas:
+    ViewArea:
+      type: object
+      properties:
+        topLeft:
+          type: object
+          properties:
+            x:
+              type: number
+              example: 23
+            y:
+              type: number
+              example: 89
+        bottomRight:
+          type: object
+          properties:
+            x:
+              type: number
+              example: 24
+            y:
+              type: number
+              example: 90
+    Data:
+      type: object
+      properties:
+        x:
+          type: number
+          example: 23
+        y:
+          type: number
+          example: 89
+        z:
+          type: integer
+          format: int8
+          example: 0
