@@ -1,5 +1,2 @@
-1. make a decent design for the views
-2. clear the dependencies and the code
-3. discuss and implement the format of json data
-    - z values as it is
-    - z values as 0, 1, 2
+1. get and implement ranges of z
+2. find and deply somewhere where the database gets updated

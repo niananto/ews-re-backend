@@ -31,6 +31,8 @@ app.use(
 );
 
 const swaggerDocument = require("./api/openapi.json");
+// const swaggerCSS = fs.readFileSync((process.cwd()+"/api/openapi.css"), 'utf8');
+// app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument, {customCss: swaggerCSS}));
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 
 app.use("/route", router);
@@ -73,8 +75,7 @@ app.get("/data/all", async function (req, res, next) {
 });
 
 app.post("/data", async function (req, res, next) {
-	const topLeft = req.body.topLeft;
-	const bottomRight = req.body.bottomRight;
+	const { topLeft, bottomRight } = req.body;
 	// console.table({ topLeft, bottomRight });
 	if (!topLeft || !bottomRight) {
 		return res.status(400).send("Bad Request");
