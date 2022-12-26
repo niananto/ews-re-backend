@@ -26,7 +26,7 @@
 	"consumes": ["application/json"],
 	"produces": ["application/json"],
 	"paths": {
-		"/dummy-data": {
+		"/data/dummy": {
 			"get": {
 				"description": "Get dummy data for low, moderate and high warning",
 				"produces": ["application/json"],
@@ -37,7 +37,7 @@
 				}
 			}
 		},
-		"/all-data": {
+		"/data/all": {
 			"get": {
 				"description": "Get all the data for low, moderate and high warning",
 				"produces": ["application/json"],

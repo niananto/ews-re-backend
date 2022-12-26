@@ -42,7 +42,7 @@ app.use("/styles", express.static(path.join(__dirname, "styles")));
 
 ////////////////////////////////////////////////
 
-app.get("/dummy-data", async function (req, res, next) {
+app.get("/data/dummy", async function (req, res, next) {
 	fs.readFile(process.env.DUMMY_DATA, "utf-8", (err, data) => {
 		if (err) {
 			console.error(err);
@@ -52,7 +52,7 @@ app.get("/dummy-data", async function (req, res, next) {
 	});
 });
 
-app.get("/all-data", async function (req, res, next) {
+app.get("/data/all", async function (req, res, next) {
   // from JSON file
 	// fs.readFile(process.env.PROCESSED_CSV, "utf-8", (err, data) => {
 	// 	if (err) {
@@ -72,10 +72,10 @@ app.get("/all-data", async function (req, res, next) {
   });
 });
 
-app.get("/data", async function (req, res, next) {
+app.post("/data", async function (req, res, next) {
 	const topLeft = req.body.topLeft;
 	const bottomRight = req.body.bottomRight;
-	console.table({ topLeft, bottomRight });
+	// console.table({ topLeft, bottomRight });
 	if (!topLeft || !bottomRight) {
 		return res.status(400).send("Bad Request");
 	}
