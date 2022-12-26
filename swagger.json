@@ -37,10 +37,34 @@
 				}
 			}
 		},
-		"/data": {
+		"/all-data": {
 			"get": {
 				"description": "Get all the data for low, moderate and high warning",
 				"produces": ["application/json"],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				}
+			}
+		},
+    "/data": {
+			"get": {
+				"description": "Get data for for a particular view area",
+				"produces": ["application/json"],
+        "consumes": ["application/json"],
+        "parameters": [
+          {
+            "topLeft": {
+              "x": 23,
+              "y": 89
+            },
+            "bottomRight": {
+              "x": 24,
+              "y": 90
+            }
+          }
+        ],
 				"responses": {
 					"200": {
 						"description": ""
