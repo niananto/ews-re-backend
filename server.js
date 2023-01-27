@@ -135,7 +135,7 @@ app.post("/admin/upload", async function (req, res, next) {
 			return res.status(500).send("Couldn't handle file upload");
 		}
 
-		require("./utlils/csvParser")(filepath);
+		require("./utils/csvParser")(filepath);
 
 		return res.status(200).send(file.name + " File Upload Successful");
 	});
