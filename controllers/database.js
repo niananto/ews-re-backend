@@ -1,35 +1,30 @@
-const sqlite3 = require("sqlite3").verbose();
-// const md5 = require("md5");
-const DBSOURCE = "db.sqlite";
-// const DBSOURCE = ":memory:"
+require('dotenv').config({ path: '../.env' });
+const { Client, Pool } = require('pg');
 
-const db = new sqlite3.Database(DBSOURCE, (err) => {
+const conString = process.env.DB_URI || 'postgres://postgres:postgres@localhost:5432/postgres';
+const db = new Client(conString);
+db.connect(function(err) {
+  if(err) {
+    return console.error('could not connect to postgres', err);
+  }
+  return console.log('connected to postgres');
+});
+
+const q = `CREATE TABLE data (
+          id SERIAL PRIMARY KEY ,
+          x FLOAT8,
+          y FLOAT8, 
+          z SMALLINT, 
+          CONSTRAINT x_y_unique UNIQUE (x, y)
+          )`
+const params = [];
+
+db.query(q, params, (err, result) => {
 	if (err) {
-		// Cannot open database
-		return console.error(err.message);
-	} else {
-		console.log("Connected to the SQLite database.");
-		db.run(
-			`CREATE TABLE data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            x number,
-            y number, 
-            z number, 
-            CONSTRAINT x_y_unique UNIQUE (x, y)
-            )`,
-			(err) => {
-				if (err) {
-					// Table already created
-					console.log("table already created");
-				} else {
-					// Table just created, creating some rows
-					// var insert = 'INSERT INTO user (name, email, password) VALUES (?,?,?)';
-					// db.run(insert, ["admin","admin@example.com",md5("admin123456")]);
-					// db.run(insert, ["user","user@example.com",md5("user123456")]);
-				}
-			}
-		);
+		return console.error("Table already exists");
 	}
+
+  console.log("Table created");
 });
 
 module.exports = db;

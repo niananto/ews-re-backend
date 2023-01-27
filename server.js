@@ -55,13 +55,13 @@ app.get("/data/dummy", async function (req, res, next) {
 });
 
 app.get("/data/all", async function (req, res, next) {
-  // from sqlite database
-  db.all("SELECT * FROM data", function (err, rows) {
+  // from postrges database
+  db.query("SELECT * FROM data", [], async (err, result) => {
     if (err) {
-      console.error(err);
+      console.error("error running query", q, err);
       return res.status(500).send("Couldn't read file");
     }
-    return res.status(200).json(rows);
+    return res.status(200).json(result.rows);
   });
 });
 
@@ -72,15 +72,16 @@ app.post("/data", async function (req, res, next) {
 		return res.status(400).send("Bad Request");
 	}
 
-  // from sqlite database
+  // from postrges database
   // filter on x and y in the range of topLeft and bottomRight
-  db.all("SELECT * FROM data WHERE x BETWEEN ? AND ? AND y BETWEEN ? AND ?",
-              [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y], function (err, rows) {
+  const q = "SELECT * FROM data WHERE x BETWEEN $1 AND $2 AND y BETWEEN $3 AND $4";
+  const values = [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y];
+  db.query(q, values, (err, result) => {
     if (err) {
-      console.error(err);
+      console.error("error running query", q, err);
       return res.status(500).send("Couldn't read file");
     }
-    return res.status(200).json(rows);
+    return res.status(200).json(result.rows);
   });
 });
 
