@@ -1,4 +1,4 @@
-# .env
+.env
 *lock*
 node_modules/
 serviceAccountKey.json
