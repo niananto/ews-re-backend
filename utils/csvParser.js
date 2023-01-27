@@ -1,8 +1,9 @@
 require("dotenv").config();
 
-const csv = require('csv-parser')
-const fs = require('fs')
-const db = require('../controllers/database');
+const csv = require("csv-parser");
+const fs = require("fs");
+const db = require("../controllers/database");
+let sheerStressData = db.collection("sheer-stress-data");
 const results = [];
 
 var lowMax = 1;
@@ -13,53 +14,60 @@ const MODINDEX = 1;
 const HIGHINDEX = 2;
 
 const parseCsv = async function (filepath) {
-fs.createReadStream(filepath)
-    .pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end', () => {
-        
-      // convert it from list of dictionarirs to list of lists
-        let listResults = [];
-        for (let i = 0; i < results.length; i++) {
-            listResults.push(Object.values(results[i]));
-        }
+	fs.createReadStream(filepath)
+		.pipe(csv())
+		.on("data", (data) => results.push(data))
+		.on("end", () => {
+			// convert it from list of dictionarirs to list of lists
+			let rows = [];
+			for (let i = 0; i < results.length; i++) {
+				rows.push(Object.values(results[i]));
+			}
 
-        // write into JSON file
-        // fs.writeFile(process.env.PROCESSED_CSV, JSON.stringify(results, null, ' '), function (err) {
-        //     if (err) return console.log(err);
+			// write into firestore
+			// should be done in batches
+			for (var i = 0; i < rows.length; i++) {
+				// can do some server side filtering here
+
+				// convert the z value to a number
+				rows[i][2] = Number(rows[i][2]);
+
+				/////////////////////////////////////////////
+				let z = HIGHINDEX;
+				// assign z according to the range
+				if (rows[i][2] <= lowMax) {
+					z = LOWINDEX;
+				} else if (rows[i][2] <= modMax) {
+					z = MODINDEX;
+				}
+				
+        // convert the x and y values to numbers
+        rows[i][0] = Number(rows[i][0]);
+        rows[i][1] = Number(rows[i][1]);
+
+        // write to firestore
+        // db.batch().set(sheerStressData.doc(), {
+        //   x: rows[i][0],
+        //   y: rows[i][1],
+        //   z: z,
         // });
 
-        // write into sqlite database
-        var i = 0;
-        db.serialize(function() {
-            db.run("DELETE FROM data");
-            var stmt = db.prepare("INSERT INTO data (x, y, z) VALUES (?, ?, ?)");
-            for (; i < listResults.length; i++) {
-              // can do some server side filtering here
-
-
-              // convert the z value to a number
-              listResults[i][2] = Number(listResults[i][2]);
-
-              /////////////////////////////////////////////
-              let z = HIGHINDEX;
-              // assign z according to the range
-              if (listResults[i][2] <= lowMax) {
-                z = LOWINDEX;
-              } else if (listResults[i][2] <= modMax) {
-                z = MODINDEX;
-              }
-              stmt.run(listResults[i][0], listResults[i][1], z);
-            }
-            stmt.finalize((err) => {
-              if (err) {
-                console.error(err);
-              }
-            });
+        // single insert
+        sheerStressData.doc().set({
+          x: rows[i][0],
+          y: rows[i][1],
+          z: z,
         });
-        console.log("Inserted " + i + " rows into database");
-        console.log(listResults);
-    });
-}
+			}
+      // db.batch().commit().then((res, err) => {
+      //   if (err) {
+      //     console.error(err);
+      //   }
+      
+      //   console.log("Inserted " + i + " rows into database");
+      //   console.log(rows);
+      // });
+		});
+};
 
 module.exports = parseCsv;
