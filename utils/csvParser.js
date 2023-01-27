@@ -24,11 +24,6 @@ fs.createReadStream(filepath)
             listResults.push(Object.values(results[i]));
         }
 
-        // write into JSON file
-        // fs.writeFile(process.env.PROCESSED_CSV, JSON.stringify(results, null, ' '), function (err) {
-        //     if (err) return console.log(err);
-        // });
-
         // write into sqlite database
         var i = 0;
         db.serialize(function() {

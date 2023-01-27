@@ -55,15 +55,6 @@ app.get("/data/dummy", async function (req, res, next) {
 });
 
 app.get("/data/all", async function (req, res, next) {
-  // from JSON file
-	// fs.readFile(process.env.PROCESSED_CSV, "utf-8", (err, data) => {
-	// 	if (err) {
-	// 		console.error(err);
-	// 		return res.status(500).send("Couldn't read file");
-	// 	}
-	// 	return res.status(200).json(JSON.parse(data));
-	// });
-
   // from sqlite database
   db.all("SELECT * FROM data", function (err, rows) {
     if (err) {
@@ -80,15 +71,6 @@ app.post("/data", async function (req, res, next) {
 	if (!topLeft || !bottomRight) {
 		return res.status(400).send("Bad Request");
 	}
-
-  // from JSON file
-	// fs.readFile(process.env.PROCESSED_CSV, "utf-8", (err, data) => {
-	// 	if (err) {
-	// 		console.error(err);
-	// 		return res.status(500).send("Couldn't read file");
-	// 	}
-	// 	return res.status(200).json(JSON.parse(data));
-	// });
 
   // from sqlite database
   // filter on x and y in the range of topLeft and bottomRight
