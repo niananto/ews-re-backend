@@ -1,8 +1,8 @@
 require("dotenv").config();
 
-const csv = require("csv-parser");
-const fs = require("fs");
-const db = require("../controllers/database");
+const csv = require('csv-parser')
+const fs = require('fs')
+const db = require('../controllers/database');
 const results = [];
 
 var lowMax = 1;
@@ -17,7 +17,13 @@ fs.createReadStream(filepath)
     .pipe(csv())
     .on('data', (data) => results.push(data))
     .on('end', () => {
-        // console.log(results);
+        
+      // convert it from list of dictionarirs to list of lists
+        let listResults = [];
+        for (let i = 0; i < results.length; i++) {
+            listResults.push(Object.values(results[i]));
+        }
+
         // write into JSON file
         // fs.writeFile(process.env.PROCESSED_CSV, JSON.stringify(results, null, ' '), function (err) {
         //     if (err) return console.log(err);
@@ -28,18 +34,25 @@ fs.createReadStream(filepath)
         db.serialize(function() {
             db.run("DELETE FROM data");
             var stmt = db.prepare("INSERT INTO data (x, y, z) VALUES (?, ?, ?)");
-            for (; i < results.length; i++) {
+            for (; i < listResults.length; i++) {
               // can do some server side filtering here
+
+
+              // convert the z value to a number
+              listResults[i][2] = Number(listResults[i][2]);
 
               /////////////////////////////////////////////
               let z = HIGHINDEX;
               // assign z according to the range
-              if (results[i].z <= lowMax) {
+              if (listResults[i][2] <= lowMax) {
                 z = LOWINDEX;
-              } else if (results[i].z <= modMax) {
+              } else if (listResults[i][2] <= modMax) {
                 z = MODINDEX;
               }
-              stmt.run(results[i].x, results[i].y, z);
+
+              let x = Number(listResults[i][0]);
+              let y = Number(listResults[i][1]);
+              stmt.run(x, y, z);
             }
             stmt.finalize((err) => {
               if (err) {
@@ -48,6 +61,7 @@ fs.createReadStream(filepath)
             });
         });
         console.log("Inserted " + i + " rows into database");
+        // console.log(listResults);
     });
 }
 

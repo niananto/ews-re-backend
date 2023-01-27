@@ -55,23 +55,23 @@ app.get("/data/dummy", async function (req, res, next) {
 });
 
 app.get("/data/all", async function (req, res, next) {
-  let sheerStressData = db.collection("sheer-stress-data");
+  // from JSON file
+	// fs.readFile(process.env.PROCESSED_CSV, "utf-8", (err, data) => {
+	// 	if (err) {
+	// 		console.error(err);
+	// 		return res.status(500).send("Couldn't read file");
+	// 	}
+	// 	return res.status(200).json(JSON.parse(data));
+	// });
 
-  // from firestore
-  rows = [];
-  sheerStressData.get().then((snapshot) => {
-    snapshot.forEach((doc) => {
-      rows.push(doc.data());
-    });
-    // console.log(rows);
-    res.status(200).json(rows);
-
-  }).catch((err) => {
-    console.error('Error getting documents', err);
-    res.status(500).send("Couldn't read file");
+  // from sqlite database
+  db.all("SELECT * FROM data", function (err, rows) {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Couldn't read file");
+    }
+    return res.status(200).json(rows);
   });
-
-  return res;
 });
 
 app.post("/data", async function (req, res, next) {
@@ -92,15 +92,14 @@ app.post("/data", async function (req, res, next) {
 
   // from sqlite database
   // filter on x and y in the range of topLeft and bottomRight
-  let sheerStressData = db.collection("sheer-stress-data");
-  snapshot = await sheerStressData.where("x", ">=", topLeft.x).where("x", "<=", bottomRight.x).get();
-  rows = [];
-  snapshot.forEach((doc) => {
-    if (doc.data().y >= topLeft.y && doc.data().y <= bottomRight.y) {
-      rows.push(doc.data());
+  db.all("SELECT * FROM data WHERE x BETWEEN ? AND ? AND y BETWEEN ? AND ?",
+              [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y], function (err, rows) {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Couldn't read file");
     }
+    return res.status(200).json(rows);
   });
-  return res.status(200).json(rows);
 });
 
 app.get("/admin", function (req, res, next) {
@@ -136,7 +135,7 @@ app.post("/admin/upload", async function (req, res, next) {
 			return res.status(500).send("Couldn't handle file upload");
 		}
 
-		require("./utlils/csvParser")(filepath);
+		require("./utils/csvParser")(filepath);
 
 		return res.status(200).send(file.name + " File Upload Successful");
 	});
