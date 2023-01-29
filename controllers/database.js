@@ -2,7 +2,12 @@ require('dotenv').config({ path: '../.env' });
 const { Client, Pool } = require('pg');
 
 const conString = process.env.DB_URI;
-const db = new Client(conString);
+const db = new Client({
+  connectionString: conString,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 db.connect(function(err) {
   if(err) {
     return console.error('could not connect to postgres', err);
