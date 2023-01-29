@@ -22,13 +22,29 @@ app.use(cors());
 app.use(fileupload());
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
-app.use(
-	session({
-		secret: uuidv4(),
-		resave: false,
-		saveUninitialized: true,
-	})
-);
+// app.use(
+// 	session({
+// 		secret: uuidv4(),
+// 		resave: false,
+// 		saveUninitialized: true,
+// 	})
+// );
+
+// express session with sqlite
+const SQLiteStore = require('connect-sqlite3')(session);
+// app.set('views', __dirname + '/views');
+// app.set('view engine', 'ejs');
+// app.use(express.bodyParser());
+// app.use(express.methodOverride());
+// app.use(express.cookieParser());
+app.use(session({
+  store: new SQLiteStore,
+  secret: uuidv4(),
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 1 week
+}));
+
 
 const swaggerDocument = require("./api/openapi.json");
 // const swaggerCSS = fs.readFileSync((process.cwd()+"/api/openapi.css"), 'utf8');
