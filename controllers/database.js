@@ -1,7 +1,7 @@
 require('dotenv').config({ path: '../.env' });
 const { Client, Pool } = require('pg');
 
-const conString = process.env.DB_URI || 'postgres://postgres:postgres@localhost:5432/postgres';
+const conString = process.env.DB_URI;
 const db = new Client(conString);
 db.connect(function(err) {
   if(err) {

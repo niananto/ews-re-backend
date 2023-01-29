@@ -41,9 +41,9 @@ app.use(cookieParser());
 const Client = require("./controllers/database").Client;
 app.use(session({
   store: new pgSession({
-    // pool : process.env.DB_URI,    // Connection pool
-    conString : process.env.DB_URI, // Connect using something else than default DATABASE_URL env variable
-    // tableName : 'session',        // Use another table-name than the default "session" one
+    // pool : process.env.DB_URI,     // Connection pool
+    conString : process.env.DB_URI,   // Connect using something else than default DATABASE_URL env variable
+    tableName : 'session',            // Use another table-name than the default "session" one
     createTableIfMissing: true,
   }),
   secret: uuidv4(),
