@@ -11,6 +11,10 @@ const bodyparser = require("body-parser");
 const session = require("express-session");
 const { v4: uuidv4 } = require("uuid");
 
+const methodOverride = require("method-override");
+const cookieParser = require("cookie-parser");
+const SQLiteStore = require('connect-sqlite3')(session);
+
 const swaggerUI = require("swagger-ui-express");
 
 const router = require("./router");
@@ -22,27 +26,19 @@ app.use(cors());
 app.use(fileupload());
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
-// app.use(
-// 	session({
-// 		secret: uuidv4(),
-// 		resave: false,
-// 		saveUninitialized: true,
-// 	})
-// );
 
 // express session with sqlite
-const SQLiteStore = require('connect-sqlite3')(session);
-// app.set('views', __dirname + '/views');
-// app.set('view engine', 'ejs');
-// app.use(express.bodyParser());
-// app.use(express.methodOverride());
-// app.use(express.cookieParser());
+app.use(methodOverride());
+app.use(cookieParser());
 app.use(session({
   store: new SQLiteStore,
   secret: uuidv4(),
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 1 week
+  cookie: { 
+    secure: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+  }
 }));
 
 
@@ -53,6 +49,7 @@ app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 
 app.use("/route", router);
 
+// app.set('views', __dirname + '/views');
 app.set("view engine", "ejs");
 
 // load static assets
