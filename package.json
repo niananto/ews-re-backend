@@ -6,6 +6,8 @@
     },
     "dependencies": {
         "body-parser": "^1.20.1",
+        "connect-pg-simple": "^8.0.0",
+        "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
         "csv-parser": "^3.0.0",
         "dotenv": "^16.0.3",
@@ -14,6 +16,7 @@
         "express-fileupload": "^1.4.0",
         "express-promise-router": "^4.1.1",
         "express-session": "^1.17.3",
+        "method-override": "^3.0.0",
         "pg": "^8.9.0",
         "uuid": "^9.0.0"
     },

@@ -11,10 +11,14 @@ const bodyparser = require("body-parser");
 const session = require("express-session");
 const { v4: uuidv4 } = require("uuid");
 
+const methodOverride = require("method-override");
+const cookieParser = require("cookie-parser");
+const pgSession = require("connect-pg-simple")(session);
+
 const swaggerUI = require("swagger-ui-express");
 
 const router = require("./router");
-const db = require("./controllers/database");
+const db = require("./controllers/database").db;
 
 const app = express();
 app.use(express.json());
@@ -22,15 +26,36 @@ app.use(cors());
 app.use(fileupload());
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
-app.use(
-	session({
-		secret: uuidv4(),
-		resave: false,
-		saveUninitialized: true,
-	})
-);
+// app.use(
+// 	session({
+// 		secret: uuidv4(),
+// 		resave: false,
+// 		saveUninitialized: true,
+// 	})
+// );
+
+app.use(methodOverride());
+app.use(cookieParser());
+
+// postgres session store
+const Client = require("./controllers/database").Client;
+app.use(session({
+  store: new pgSession({
+    // pool : process.env.DB_URI,    // Connection pool
+    conString : process.env.DB_URI, // Connect using something else than default DATABASE_URL env variable
+    // tableName : 'session',        // Use another table-name than the default "session" one
+    createTableIfMissing: true,
+  }),
+  secret: uuidv4(),
+  resave: true,
+  saveUninitialized: true,
+  cookie: { maxAge: 1 * 24 * 60 * 60 * 1000 } // 1 day
+  // Insert express-session options here
+}));
+
 
 const swaggerDocument = require("./api/openapi.json");
+const { createTracing } = require("trace_events");
 // const swaggerCSS = fs.readFileSync((process.cwd()+"/api/openapi.css"), 'utf8');
 // app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument, {customCss: swaggerCSS}));
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));

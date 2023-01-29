@@ -27,4 +27,5 @@ db.query(q, params, (err, result) => {
   console.log("Table created");
 });
 
-module.exports = db;
+module.exports.db = db;
+module.exports.Client = Client;

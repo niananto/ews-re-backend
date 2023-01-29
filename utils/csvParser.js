@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const csv = require("csv-parser");
 const fs = require("fs");
-const db = require("../controllers/database");
+const db = require("../controllers/database").db;
 const results = [];
 
 var lowMax = 1;
