@@ -1,4 +1,4 @@
-# BackEnd-Early-Warning-System-For-River-Erosion
+# Early Warning System For River Erosion [BackEnd]
 
 Clone or pull the repo and then run these commands to get the backend running.
 
