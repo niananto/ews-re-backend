@@ -13,12 +13,12 @@ const { v4: uuidv4 } = require("uuid");
 
 const methodOverride = require("method-override");
 const cookieParser = require("cookie-parser");
-const SQLiteStore = require('connect-sqlite3')(session);
+const pgSession = require("connect-pg-simple")(session);
 
 const swaggerUI = require("swagger-ui-express");
 
 const router = require("./router");
-const db = require("./controllers/database");
+const db = require("./controllers/database").db;
 
 const app = express();
 app.use(express.json());
@@ -26,23 +26,36 @@ app.use(cors());
 app.use(fileupload());
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
+// app.use(
+// 	session({
+// 		secret: uuidv4(),
+// 		resave: false,
+// 		saveUninitialized: true,
+// 	})
+// );
 
-// express session with sqlite
 app.use(methodOverride());
 app.use(cookieParser());
+
+// postgres session store
+const Client = require("./controllers/database").Client;
 app.use(session({
-  store: new SQLiteStore,
+  store: new pgSession({
+    // pool : process.env.DB_URI,     // Connection pool
+    conString : process.env.DB_URI,   // Connect using something else than default DATABASE_URL env variable
+    tableName : 'session',            // Use another table-name than the default "session" one
+    createTableIfMissing: true,
+  }),
   secret: uuidv4(),
-  resave: false,
+  resave: true,
   saveUninitialized: true,
-  cookie: { 
-    secure: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
-  }
+  cookie: { maxAge: 1 * 24 * 60 * 60 * 1000 } // 1 day
+  // Insert express-session options here
 }));
 
 
 const swaggerDocument = require("./api/openapi.json");
+const { createTracing } = require("trace_events");
 // const swaggerCSS = fs.readFileSync((process.cwd()+"/api/openapi.css"), 'utf8');
 // app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument, {customCss: swaggerCSS}));
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocument));
@@ -68,13 +81,13 @@ app.get("/data/dummy", async function (req, res, next) {
 });
 
 app.get("/data/all", async function (req, res, next) {
-  // from sqlite database
-  db.all("SELECT * FROM data", function (err, rows) {
+  // from postrges database
+  db.query("SELECT * FROM data", [], async (err, result) => {
     if (err) {
-      console.error(err);
+      console.error("error running query", q, err);
       return res.status(500).send("Couldn't read file");
     }
-    return res.status(200).json(rows);
+    return res.status(200).json(result.rows);
   });
 });
 
@@ -85,15 +98,16 @@ app.post("/data", async function (req, res, next) {
 		return res.status(400).send("Bad Request");
 	}
 
-  // from sqlite database
+  // from postrges database
   // filter on x and y in the range of topLeft and bottomRight
-  db.all("SELECT * FROM data WHERE x BETWEEN ? AND ? AND y BETWEEN ? AND ?",
-              [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y], function (err, rows) {
+  const q = "SELECT * FROM data WHERE x BETWEEN $1 AND $2 AND y BETWEEN $3 AND $4";
+  const values = [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y];
+  db.query(q, values, (err, result) => {
     if (err) {
-      console.error(err);
+      console.error("error running query", q, err);
       return res.status(500).send("Couldn't read file");
     }
-    return res.status(200).json(rows);
+    return res.status(200).json(result.rows);
   });
 });
 
