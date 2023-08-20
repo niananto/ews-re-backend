@@ -5,8 +5,8 @@ const fs = require("fs");
 const db = require("../controllers/database").db;
 const results = [];
 
-var lowMax = 1;
-var modMax = 2;
+var lowMax = -3.837142698;
+var modMax = 5.816343068;
 
 const LOWINDEX = 0;
 const MODINDEX = 1;
