@@ -138,6 +138,12 @@ app.post("/admin/upload", async function (req, res, next) {
 
 	const thresholds = { low_min, low_max, med_min, med_max, high_min, high_max } = req.body;
 	console.log(thresholds);
+	// check if they are numbers
+	for (const [key, value] of Object.entries(thresholds)) {
+		if (isNaN(value)) {
+			return res.status(400).send("Thresholds must be numbers");
+		}
+	}
 
 	const filepath = path.join(__dirname, "/uploads/", file.name);
 
