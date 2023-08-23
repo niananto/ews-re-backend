@@ -5,18 +5,18 @@ const fs = require("fs");
 const db = require("../controllers/database").db;
 const results = [];
 
-var lowMax = -3.837142698;
-var modMax = 5.816343068;
-
 const LOWINDEX = 0;
-const MODINDEX = 1;
+const MEDINDEX = 1;
 const HIGHINDEX = 2;
 
-const parseCsv = async function (filepath) {
+const parseCsv = async function (filepath, thresholds) {
 	fs.createReadStream(filepath)
 		.pipe(csv())
 		.on("data", (data) => results.push(data))
 		.on("end", () => {
+
+			console.log("Data Length: " + results.length);
+
 			// convert it from list of dictionarirs to list of lists
 			let listResults = [];
 			for (let i = 0; i < results.length; i++) {
@@ -28,6 +28,7 @@ const parseCsv = async function (filepath) {
 			var q =	"INSERT INTO data (x, y, z) VALUES ($1, $2, $3)";
 
       var i = 0;
+			var ignoreCount = 0;
       var errorCount = 0;
 			for (; i < listResults.length; i++) {
 				// can do some server side filtering here
@@ -35,12 +36,17 @@ const parseCsv = async function (filepath) {
 				// convert the z value to a number
 				listResults[i][2] = Number(listResults[i][2]);
 
-				let z = HIGHINDEX;
 				// assign z according to the range
-				if (listResults[i][2] <= lowMax) {
+				let z;
+				if (listResults[i][2] > thresholds.low_min && listResults[i][2] <= thresholds.low_max) {
 					z = LOWINDEX;
-				} else if (listResults[i][2] <= modMax) {
-					z = MODINDEX;
+				} else if (listResults[i][2] > thresholds.med_min && listResults[i][2] <= thresholds.med_max) {
+					z = MEDINDEX;
+				} else if (listResults[i][2] > thresholds.high_min && listResults[i][2] <= thresholds.high_max) {
+					z = HIGHINDEX;
+				} else {
+					ignoreCount++;
+					continue;
 				}
 
 				let x = Number(listResults[i][0]);
@@ -53,7 +59,7 @@ const parseCsv = async function (filepath) {
         });
 			}
 
-			console.log("Inserted " + (i-errorCount) + " rows into database");
+			console.log("Inserted " + (i-ignoreCount-errorCount) + " rows into database");
 		});
 };
 

@@ -130,21 +130,25 @@ app.post("/admin/upload", async function (req, res, next) {
 	}
 
 	const file = req.files.csv;
-	console.log(file.name);
+	console.log(file.name + " received");
 
 	if (path.extname(file.name) != ".csv") {
 		return res.status(400).send("Please upload csv files only");
 	}
+
+	const thresholds = { low_min, low_max, med_min, med_max, high_min, high_max } = req.body;
+	console.log(thresholds);
 
 	const filepath = path.join(__dirname, "/uploads/", file.name);
 
 	file.mv(filepath, function (err, result) {
 		if (err) {
 			console.log(err);
-			return res.status(500).send("Couldn't handle file upload");
+			console.log("Couldn't save the file");
+			return res.status(500).send("Couldn't save the file");
 		}
 
-		require("./utils/csvParser")(filepath);
+		require("./utils/csvParser")(filepath, thresholds);
 
 		return res.status(200).send(file.name + " File Upload Successful");
 	});
