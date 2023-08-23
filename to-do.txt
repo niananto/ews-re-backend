@@ -1,2 +1,0 @@
-1. get and implement ranges of z
-2. find and deply somewhere where the database gets updated
