@@ -1,0 +1,2 @@
+- [ ] More than 2 lakh data is inserted with csv files but our backend only persists somewhat around 25k
+- [ ] Handle database insert or persistence with loading screen? with info like 200/255000 inserted?
