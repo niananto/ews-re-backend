@@ -154,7 +154,7 @@ app.post("/admin/upload", async function (req, res, next) {
 			return res.status(500).send("Couldn't save the file");
 		}
 
-		require("./utils/csvParser")(filepath, thresholds);
+		require("./utils/csvParser3")(filepath, thresholds);
 
 		return res.status(200).send(file.name + " File Upload Successful");
 	});

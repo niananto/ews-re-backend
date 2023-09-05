@@ -1,3 +1,8 @@
+// this does not properly work, use csvParser3.js instead
+
+
+
+
 const csv = require("csv-parser");
 const fs = require("fs");
 const db = require("../controllers/database").db;

@@ -1,4 +1,7 @@
-require("dotenv").config();
+// this fails to load all the data
+// use csvParser3.js instead
+
+
 
 const csv = require("csv-parser");
 const fs = require("fs");
