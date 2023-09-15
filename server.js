@@ -20,19 +20,20 @@ const swaggerUI = require("swagger-ui-express");
 const router = require("./router");
 const db = require("./controllers/database").db;
 
+// firebase
+const storage = require("./controllers/firebase").storage;
+const getStorage = require("firebase/storage").getStorage;
+const ref = require("firebase/storage").ref;
+const getDownloadURL = require("firebase/storage").getDownloadURL;
+const uploadBytesResumable = require("firebase/storage").uploadBytesResumable;
+const uploadBytes = require("firebase/storage").uploadBytes;
+
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(fileupload());
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
-// app.use(
-// 	session({
-// 		secret: uuidv4(),
-// 		resave: false,
-// 		saveUninitialized: true,
-// 	})
-// );
 
 app.use(methodOverride());
 app.use(cookieParser());
@@ -40,17 +41,17 @@ app.use(cookieParser());
 // postgres session store
 const Client = require("./controllers/database").Client;
 app.use(session({
-  store: new pgSession({
-    // pool : process.env.DB_URI,     // Connection pool
-    conString : process.env.DB_URI,   // Connect using something else than default DATABASE_URL env variable
-    tableName : 'session',            // Use another table-name than the default "session" one
-    createTableIfMissing: true,
-  }),
-  secret: uuidv4(),
-  resave: true,
-  saveUninitialized: true,
-  cookie: { maxAge: 1 * 24 * 60 * 60 * 1000 } // 1 day
-  // Insert express-session options here
+	store: new pgSession({
+		// pool : process.env.DB_URI,     // Connection pool
+		conString: process.env.DB_URI,   // Connect using something else than default DATABASE_URL env variable
+		tableName: 'session',            // Use another table-name than the default "session" one
+		createTableIfMissing: true,
+	}),
+	secret: uuidv4(),
+	resave: true,
+	saveUninitialized: true,
+	cookie: { maxAge: 1 * 24 * 60 * 60 * 1000 } // 1 day
+	// Insert express-session options here
 }));
 
 
@@ -81,14 +82,14 @@ app.get("/data/dummy", async function (req, res, next) {
 });
 
 app.get("/data/all", async function (req, res, next) {
-  // from postrges database
-  db.query("SELECT * FROM data", [], async (err, result) => {
-    if (err) {
-      console.error("error running query", q, err);
-      return res.status(500).send("Couldn't read file");
-    }
-    return res.status(200).json(result.rows);
-  });
+	// from postrges database
+	db.query("SELECT * FROM data", [], async (err, result) => {
+		if (err) {
+			console.error("error running query", q, err);
+			return res.status(500).send("Couldn't read file");
+		}
+		return res.status(200).json(result.rows);
+	});
 });
 
 app.post("/data", async function (req, res, next) {
@@ -98,17 +99,17 @@ app.post("/data", async function (req, res, next) {
 		return res.status(400).send("Bad Request");
 	}
 
-  // from postrges database
-  // filter on x and y in the range of topLeft and bottomRight
-  const q = "SELECT * FROM data WHERE x BETWEEN $1 AND $2 AND y BETWEEN $3 AND $4";
-  const values = [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y];
-  db.query(q, values, (err, result) => {
-    if (err) {
-      console.error("error running query", q, err);
-      return res.status(500).send("Couldn't read file");
-    }
-    return res.status(200).json(result.rows);
-  });
+	// from postrges database
+	// filter on x and y in the range of topLeft and bottomRight
+	const q = "SELECT * FROM data WHERE x BETWEEN $1 AND $2 AND y BETWEEN $3 AND $4";
+	const values = [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y];
+	db.query(q, values, (err, result) => {
+		if (err) {
+			console.error("error running query", q, err);
+			return res.status(500).send("Couldn't read file");
+		}
+		return res.status(200).json(result.rows);
+	});
 });
 
 app.get("/admin", function (req, res, next) {
@@ -129,35 +130,31 @@ app.post("/admin/upload", async function (req, res, next) {
 		return res.status(400).send("No files were uploaded.");
 	}
 
-	const file = req.files.csv;
-	console.log(file.name + " received");
-
-	if (path.extname(file.name) != ".csv") {
-		return res.status(400).send("Please upload csv files only");
+	const files = {
+		low: req.files.json_low,
+		mod: req.files.json_mod,
+		high: req.files.json_high,
 	}
 
-	const thresholds = { low_min, low_max, med_min, med_max, high_min, high_max } = req.body;
-	console.log(thresholds);
-	// check if they are numbers
-	for (const [key, value] of Object.entries(thresholds)) {
-		if (isNaN(value)) {
-			return res.status(400).send("Thresholds must be numbers");
-		}
+	for (const [key, file] of Object.entries(files)) {
+
+		const filename = key + ".json";
+
+		// upload file to firebase
+		const storageRef = ref(storage, filename);
+		const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
+		uploadTask.on("state_changed",
+			(snapshot) => {
+				const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				console.log(`Upload ${filename} is ${progress}% done`);
+			},
+			(error) => {
+				console.error(error);
+			}
+		);
 	}
 
-	const filepath = path.join(__dirname, "/uploads/", file.name);
-
-	file.mv(filepath, function (err, result) {
-		if (err) {
-			console.log(err);
-			console.log("Couldn't save the file");
-			return res.status(500).send("Couldn't save the file");
-		}
-
-		require("./utils/csvParser3")(filepath, thresholds);
-
-		return res.status(200).send(file.name + " File Upload Successful");
-	});
+	res.status(200).send("Files uploaded");
 });
 
 // Default response for any other request
