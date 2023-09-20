@@ -7,9 +7,9 @@
   },
   "servers": [
     {
-      "url": "https://backend-ews-re-niananto.onrender.com/",
+      "url": "https://ews-re-back.onrender.com/",
       "variables": {},
-      "description": "development server"
+      "description": "production server"
     },
     {
       "url": "http://localhost:8080/",
