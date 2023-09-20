@@ -23,34 +23,31 @@
     }
   ],
   "paths": {
-    "/data": {
-      "post": {
+    "/link": {
+      "get": {
         "tags": [
-          "data"
+          "link"
         ],
-        "summary": "fetch data inside a view area",
-        "operationId": "fetchSpecificData",
-        "requestBody": {
-          "description": "Send the view area",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ViewArea"
-              }
+        "summary": "fetch link of the geo json file with the closest water level given",
+        "operationId": "fetchLinkWaterLevel",
+        "parameters": [
+          {
+            "name": "waterLevel",
+            "in": "query",
+            "description": "water level",
+            "required": true,
+            "schema": {
+              "type": "number"
             }
-          },
-          "required": true
-        },
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful operation",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Data"
-                  }
+                  "$ref": "#/components/schemas/LinkEntry"
                 }
               }
             }
@@ -60,104 +57,20 @@
           }
         }
       }
-    },
-    "/data/dummy": {
-      "get": {
-        "tags": [
-          "data"
-        ],
-        "summary": "gets some dummy data",
-        "operationId": "fetchDummyData",
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Data"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/data/all": {
-      "get": {
-        "tags": [
-          "data"
-        ],
-        "summary": "gets all the data at once",
-        "operationId": "fetchAllData",
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Data"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
     "schemas": {
-      "ViewArea": {
+      "LinkEntry": {
         "type": "object",
         "properties": {
-          "topLeft": {
-            "type": "object",
-            "properties": {
-              "x": {
-                "type": "number",
-                "example": 23
-              },
-              "y": {
-                "type": "number",
-                "example": 89
-              }
-            }
-          },
-          "bottomRight": {
-            "type": "object",
-            "properties": {
-              "x": {
-                "type": "number",
-                "example": 24
-              },
-              "y": {
-                "type": "number",
-                "example": 90
-              }
-            }
-          }
-        }
-      },
-      "Data": {
-        "type": "object",
-        "properties": {
-          "x": {
+          "water_level": {
             "type": "number",
-            "example": 23
+            "example": 16.0087
           },
-          "y": {
-            "type": "number",
-            "example": 89
-          },
-          "z": {
-            "type": "integer",
-            "format": "int8",
-            "example": 0
+          "url": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/water-level-marked%2F16.00874640032320.json?alt=media&token=222ba32a-58e2-4ece-862f-88a928d72485"
           }
         }
       }

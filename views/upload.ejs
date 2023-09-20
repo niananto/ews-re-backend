@@ -36,7 +36,7 @@
                 </button> -->
         </div>
         <div class="modal-body">
-            <h2 class="modal-title">Upload a file</h2>
+            <h2 class="modal-title">Upload files</h2>
             <p class="modal-description">Attach the file below</p>
             <form action="" method="post" enctype="multipart/form-data">
                 <span class="upload-area-icon">
@@ -49,28 +49,9 @@
                         </g>
                     </svg>
                 </span>
-                <span class="upload-area-title">LOW</span>
-                <input type="file" name="json_low" class="upload-area" required accept=".json">
-                <span class="upload-area-title">MODERATE</span>
-                <input type="file" name="json_mod" class="upload-area" required accept=".json">
-                <span class="upload-area-title">HIGH</span>
-                <input type="file" name="json_high" class="upload-area" required accept=".json">
+                <!-- <span class="upload-area-title">LOW</span> -->
+                <input type="file" name="batch_json" class="upload-area" required accept=".json" multiple />             
 
-                <!-- <span class="upload-area-title">Drag file(s) here to upload.</span> -->
-                <!-- <span class="upload-area-description"> -->
-                <!-- Alternatively, you can select a file by <br/><strong>clicking here</strong> -->
-                <!-- <input type="file" name="csv"> -->
-                <!-- </span> -->
-                <!-- </button> -->
-                <!-- <div>
-                    <p class="modal-description">Please specify the thresholds</p>
-                    <input type="text" name="low_min" placeholder="low min" required>
-                    <input type="text" name="low_max" placeholder="low max" required>
-                    <input type="text" name="med_min" placeholder="medium min" required>
-                    <input type="text" name="med_max" placeholder="medium max" required>
-                    <input type="text" name="high_min" placeholder="high min" required>
-                    <input type="text" name="high_max" placeholder="high max" required>
-                </div> -->
         </div>
         <div class="modal-footer">
             <!-- <button type="cancel" class="btn-secondary">Cancel</button> -->

@@ -8,26 +8,23 @@ const db = new Client({
     rejectUnauthorized: false
   }
 });
-db.connect(function(err) {
-  if(err) {
+db.connect(function (err) {
+  if (err) {
     return console.error('could not connect to postgres', err);
   }
   return console.log('connected to postgres');
 });
 
-const q = `CREATE TABLE data (
-          id SERIAL PRIMARY KEY ,
-          x FLOAT8,
-          y FLOAT8, 
-          z SMALLINT, 
-          CONSTRAINT x_y_unique UNIQUE (x, y)
-          )`
+const q = `CREATE TABLE links (
+  water_level NUMERIC PRIMARY KEY,
+  url VARCHAR(255) NOT NULL
+)`
 const params = [];
 
 db.query(q, params, (err, result) => {
-	if (err) {
-		return console.error("Table already exists");
-	}
+  if (err) {
+    return console.error("Table already exists");
+  }
 
   console.log("Table created");
 });

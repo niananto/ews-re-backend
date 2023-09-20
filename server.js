@@ -71,44 +71,23 @@ app.use("/styles", express.static(path.join(__dirname, "styles")));
 
 ////////////////////////////////////////////////
 
-app.get("/data/dummy", async function (req, res, next) {
-	fs.readFile(process.env.DUMMY_DATA, "utf-8", (err, data) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).send("Couldn't read file");
-		}
-		return res.status(200).json(JSON.parse(data));
-	});
-});
-
-app.get("/data/all", async function (req, res, next) {
-	// from postrges database
-	db.query("SELECT * FROM data", [], async (err, result) => {
-		if (err) {
-			console.error("error running query", q, err);
-			return res.status(500).send("Couldn't read file");
-		}
-		return res.status(200).json(result.rows);
-	});
-});
-
-app.post("/data", async function (req, res, next) {
-	const { topLeft, bottomRight } = req.body;
-	// console.table({ topLeft, bottomRight });
-	if (!topLeft || !bottomRight) {
+app.get("/link", async function (req, res, next) {
+	const { waterLevel } = req.query;
+	if (!waterLevel) {
 		return res.status(400).send("Bad Request");
 	}
 
-	// from postrges database
-	// filter on x and y in the range of topLeft and bottomRight
-	const q = "SELECT * FROM data WHERE x BETWEEN $1 AND $2 AND y BETWEEN $3 AND $4";
-	const values = [topLeft.x, bottomRight.x, topLeft.y, bottomRight.y];
-	db.query(q, values, (err, result) => {
+	const q = "SELECT * FROM links ORDER BY abs(water_level - $1) ASC LIMIT 1";
+	const params = [waterLevel];
+	db.query(q, params, (err, result) => {
 		if (err) {
 			console.error("error running query", q, err);
 			return res.status(500).send("Couldn't read file");
 		}
-		return res.status(200).json(result.rows);
+		if (result.rows.length === 0) {
+			return res.status(404).send("No entry found");
+		}
+		return res.status(200).json(result.rows[0]);
 	});
 });
 
@@ -126,32 +105,57 @@ app.get("/admin/upload", function (req, res, next) {
 });
 
 app.post("/admin/upload", async function (req, res, next) {
-	if (!req.files || Object.keys(req.files).length === 0) {
+	const files = req.files.batch_json;
+
+	if (!files || files.length === 0) {
 		return res.status(400).send("No files were uploaded.");
 	}
 
-	const files = {
-		low: req.files.json_low,
-		mod: req.files.json_mod,
-		high: req.files.json_high,
+	for (const file of files) {
+		if (file.name.split(".").pop() !== "json") {
+			return res.status(400).send("Only JSON files are allowed.");
+		}
 	}
 
-	for (const [key, file] of Object.entries(files)) {
+	db.query("DELETE FROM links", [], async (err, result) => {
+		if (err) {
+			console.error("error deleting from links table", err);
+		}
+	});
 
-		const filename = key + ".json";
+	for (const file of files) {
+
+		// get water level from file name
+		const waterLevel = file.name.replace(".json", "");
 
 		// upload file to firebase
-		const storageRef = ref(storage, filename);
+		const storageRef = ref(storage, `water-level-marked/${file.name}`);
 		const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
 		uploadTask.on("state_changed",
 			(snapshot) => {
 				const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-				console.log(`Upload ${filename} is ${progress}% done`);
+				console.log(`Upload ${file.name} is ${progress}% done`);
 			},
 			(error) => {
 				console.error(error);
 			}
 		);
+
+		// get the url and save into the database
+		uploadTask.then((snapshot) => {
+			getDownloadURL(snapshot.ref).then((downloadURL) => {
+				console.log("File available at", downloadURL);
+
+				const q = "INSERT INTO links (water_level, url) VALUES ($1, $2)";
+				const values = [waterLevel, downloadURL];
+				db.query(q, values, (err, result) => {
+					if (err) {
+						console.error("error running query", q, err);
+						return res.status(500).send("Couldn't read file");
+					}
+				});
+			});
+		});
 	}
 
 	res.status(200).send("Files uploaded");
