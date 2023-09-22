@@ -71,6 +71,10 @@ app.use("/styles", express.static(path.join(__dirname, "styles")));
 
 ////////////////////////////////////////////////
 
+app.get("/", function (req, res, next) {
+	res.render("index", { title: "Water Level Marked" });
+});
+
 app.get("/link", async function (req, res, next) {
 	const { waterLevel } = req.query;
 	if (!waterLevel) {
