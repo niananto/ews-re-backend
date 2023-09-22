@@ -1,0 +1,1 @@
+gsutil cors set cors.json gs://ews-re-9d81a.appspot.com
