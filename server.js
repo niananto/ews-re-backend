@@ -129,12 +129,13 @@ app.post("/admin/upload", async function (req, res, next) {
 		const waterLevel = file.name.replace(".json", "");
 
 		// upload file to firebase
-		const storageRef = ref(storage, `water-level-marked/${file.name}`);
+		const filename = waterLevel + "_" + (new Date()).toISOString() + ".json";
+		const storageRef = ref(storage, `water-level-marked/${filename}`);
 		const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
 		uploadTask.on("state_changed",
 			(snapshot) => {
 				const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-				console.log(`Upload ${file.name} is ${progress}% done`);
+				console.log(`Upload ${filename} is ${progress}% done`);
 			},
 			(error) => {
 				console.error(error);
