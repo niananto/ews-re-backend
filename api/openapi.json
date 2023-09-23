@@ -28,13 +28,34 @@
         "tags": [
           "link"
         ],
+        "summary": "fetch link of the default geo json file with the closest water level",
+        "operationId": "fetchLink",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkEntry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/link?waterLevel={waterLevel}": {
+      "get": {
+        "tags": [
+          "link"
+        ],
         "summary": "fetch link of the geo json file with the closest water level given",
         "operationId": "fetchLinkWaterLevel",
         "parameters": [
           {
             "name": "waterLevel",
             "in": "query",
-            "description": "water level",
+            "description": "Successful operation",
             "required": true,
             "schema": {
               "type": "number"

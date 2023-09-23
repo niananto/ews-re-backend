@@ -78,21 +78,35 @@ app.get("/", function (req, res, next) {
 app.get("/link", async function (req, res, next) {
 	const { waterLevel } = req.query;
 	if (!waterLevel) {
-		return res.status(400).send("Bad Request");
-	}
 
-	const q = "SELECT * FROM links ORDER BY abs(water_level - $1) ASC LIMIT 1";
-	const params = [waterLevel];
-	db.query(q, params, (err, result) => {
-		if (err) {
-			console.error("error running query", q, err);
-			return res.status(500).send("Couldn't read file");
-		}
-		if (result.rows.length === 0) {
-			return res.status(404).send("No entry found");
-		}
-		return res.status(200).json(result.rows[0]);
-	});
+		// return the default link, closest to the current date
+		const q = "SELECT * FROM default_links ORDER BY abs(extract(epoch from updated_on) - extract(epoch from now())) ASC LIMIT 1";
+		db.query(q, [], (err, result) => {
+			if (err) {
+				console.error("error running query", q, err);
+				return res.status(500).send("Couldn't read file");
+			}
+			if (result.rows.length === 0) {
+				return res.status(404).send("No entry found");
+			}
+			return res.status(200).json(result.rows[0]);
+		});
+	}
+	else {
+
+		const q = "SELECT * FROM links ORDER BY abs(water_level - $1) ASC LIMIT 1";
+		const params = [waterLevel];
+		db.query(q, params, (err, result) => {
+			if (err) {
+				console.error("error running query", q, err);
+				return res.status(500).send("Couldn't read file");
+			}
+			if (result.rows.length === 0) {
+				return res.status(404).send("No entry found");
+			}
+			return res.status(200).json(result.rows[0]);
+		});
+	}
 });
 
 app.get("/admin", function (req, res, next) {
@@ -109,7 +123,12 @@ app.get("/admin/upload", function (req, res, next) {
 });
 
 app.post("/admin/upload", async function (req, res, next) {
-	const files = req.files.batch_json;
+	let files = req.files.batch_json;
+
+	// if one file is uploaded, make it an array
+	if (!Array.isArray(files)) {
+		files = [files];
+	}
 
 	if (!files || files.length === 0) {
 		return res.status(400).send("No files were uploaded.");
@@ -121,13 +140,49 @@ app.post("/admin/upload", async function (req, res, next) {
 		}
 	}
 
-	db.query("DELETE FROM links", [], async (err, result) => {
+	db.query("DELETE FROM links WHERE water_level", [], async (err, result) => {
 		if (err) {
 			console.error("error deleting from links table", err);
 		}
 	});
 
 	for (const file of files) {
+
+		// handle the Annual_Erosion_Risk file first
+		if (file.name === "Annual_Erosion_Risk.json") {
+
+			// upload file to firebase
+			const filename = (new Date()).toISOString() + ".json";
+			const storageRef = ref(storage, `default_links/${filename}`);
+			const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
+			uploadTask.on("state_changed",
+				(snapshot) => {
+					const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+					console.log(`Upload ${filename} is ${progress}% done`);
+				},
+				(error) => {
+					console.error(error);
+				}
+			);
+
+			// get the url and save into the database
+			uploadTask.then((snapshot) => {
+				getDownloadURL(snapshot.ref).then((downloadURL) => {
+					console.log("File available at", downloadURL);
+
+					const q = "INSERT INTO default_links (url) VALUES ($1)";
+					const values = [downloadURL];
+					db.query(q, values, (err, result) => {
+						if (err) {
+							console.error("error running query", q, err);
+							return res.status(500).send("Couldn't read file");
+						}
+					});
+				});
+			});
+			continue;
+		}
+
 
 		// get water level from file name
 		const waterLevel = file.name.replace(".json", "");

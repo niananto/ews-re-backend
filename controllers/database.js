@@ -15,18 +15,26 @@ db.connect(function (err) {
   return console.log('connected to postgres');
 });
 
-const q = `CREATE TABLE links (
+const q1 = `CREATE TABLE links (
   water_level NUMERIC PRIMARY KEY,
   url VARCHAR(255) NOT NULL
 )`
-const params = [];
-
-db.query(q, params, (err, result) => {
+db.query(q1, [], (err, result) => {
   if (err) {
-    return console.error("Table already exists");
+    return console.error("links table already exists");
   }
+  console.log("links table created");
+});
 
-  console.log("Table created");
+const q2 = `CREATE TABLE default_links (
+  updated_on TIMESTAMP PRIMARY KEY DEFAULT NOW(),
+  url VARCHAR(255) NOT NULL
+)`
+db.query(q2, [], (err, result) => {
+  if (err) {
+    return console.error("default_links table already exists");
+  }
+  console.log("default_links table created");
 });
 
 module.exports.db = db;
