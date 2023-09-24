@@ -140,7 +140,7 @@ app.post("/admin/upload", async function (req, res, next) {
 		}
 	}
 
-	db.query("DELETE FROM links WHERE water_level", [], async (err, result) => {
+	db.query("DELETE FROM links", [], async (err, result) => {
 		if (err) {
 			console.error("error deleting from links table", err);
 		}
