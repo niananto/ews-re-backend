@@ -140,17 +140,11 @@ app.post("/admin/upload", async function (req, res, next) {
 		}
 	}
 
-	db.query("DELETE FROM links", [], async (err, result) => {
-		if (err) {
-			console.error("error deleting from links table", err);
-		}
-	});
-
-	for (const file of files) {
-
-		// handle the Annual_Erosion_Risk file first
-		if (file.name === "Annual_Erosion_Risk.json") {
-
+	// get the files with name "Annual_Erosion_Risk.json"
+	const annualErosionRiskFiles = files.filter(file => file.name === "Annual_Erosion_Risk.json");
+	if (annualErosionRiskFiles.length > 0) {
+		for (const file of annualErosionRiskFiles) {
+			
 			// upload file to firebase
 			const filename = (new Date()).toISOString() + ".json";
 			const storageRef = ref(storage, `default_links/${filename}`);
@@ -180,9 +174,20 @@ app.post("/admin/upload", async function (req, res, next) {
 					});
 				});
 			});
-			continue;
 		}
+	}
 
+	// check if there are other files than "Annual_Erosion_Risk.json"
+	const otherFiles = files.filter(file => file.name !== "Annual_Erosion_Risk.json");
+	if (otherFiles.length > 0) {
+		db.query("DELETE FROM links", [], async (err, result) => {
+			if (err) {
+				console.error("error deleting from links table", err);
+			}
+		});
+	}
+
+	for (const file of otherFiles) {
 
 		// get water level from file name
 		const waterLevel = file.name.replace(".json", "");
