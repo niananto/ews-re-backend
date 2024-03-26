@@ -76,12 +76,54 @@ app.get("/", function (req, res, next) {
 });
 
 app.get("/link", async function (req, res, next) {
-	const { waterLevel } = req.query;
-	if (!waterLevel) {
+	const { waterLevel, year } = req.query;
 
-		// return the default link, closest to the current date
-		const q = "SELECT * FROM default_links ORDER BY abs(extract(epoch from updated_on) - extract(epoch from now())) ASC LIMIT 1";
-		db.query(q, [], (err, result) => {
+	// get the low, moderate, and high risk level links for the latest year
+	if (!waterLevel && !year) {
+
+		// get a list of the years
+		const q1 = "SELECT DISTINCT year FROM annual_links ORDER BY year DESC";
+		db.query(q1, [], (err1, result1) => {
+
+			if (err1) {
+				console.error("error running query", q1, err1);
+				return res.status(500).send("Couldn't read file");
+			}
+			if (result1.rows.length === 0) {
+				return res.status(404).send("No entry found");
+			}
+			
+			// return the low, moderate, and high risk level links for the latest year
+			const q2 = "SELECT * FROM annual_links WHERE year = (SELECT MAX(year) FROM annual_links) ORDER BY risk_level ASC";
+			db.query(q2, [], (err2, result2) => {
+				if (err2) {
+					console.error("error running query", q2, err2);
+					return res.status(500).send("Couldn't read file");
+				}
+				if (result2.rows.length === 0) {
+					return res.status(404).send("No entry found");
+				}
+				
+				r = {
+					years: result1.rows.map((row) => row.year),
+					year: result2.rows[0].year,
+					low: result2.rows[0].url,
+					mod: result2.rows[1].url,
+					high: result2.rows[2].url
+				}
+
+				return res.status(200).json(r);
+				
+			});
+
+		});
+	}
+
+	// get the low, moderate, and high risk level links for the specified year
+	else if (year) {
+		const q = "SELECT * FROM annual_links WHERE year = $1 ORDER BY risk_level ASC";
+		const params = [year];
+		db.query(q, params, (err, result) => {
 			if (err) {
 				console.error("error running query", q, err);
 				return res.status(500).send("Couldn't read file");
@@ -89,12 +131,21 @@ app.get("/link", async function (req, res, next) {
 			if (result.rows.length === 0) {
 				return res.status(404).send("No entry found");
 			}
-			return res.status(200).json(result.rows[0]);
+			
+			r = {
+				year: result.rows[0].year,
+				low: result.rows[0].url,
+				mod: result.rows[1].url,
+				high: result.rows[2].url
+			}
+
+			return res.status(200).json(r);
 		});
 	}
-	else {
 
-		const q = "SELECT * FROM links ORDER BY abs(water_level - $1) ASC LIMIT 1";
+	// get the link for the specified water level irrespective of the year
+	else {
+		const q = "SELECT * FROM waterlevel_links ORDER BY abs(water_level - $1) ASC LIMIT 1";
 		const params = [waterLevel];
 		db.query(q, params, (err, result) => {
 			if (err) {
@@ -123,31 +174,20 @@ app.get("/admin/upload", function (req, res, next) {
 });
 
 app.post("/admin/upload", async function (req, res, next) {
-	let files = req.files.batch_json;
+	let annualYear = req.body.year;
+	let annualLow = req.files.low_json;
+	let annualMedium = req.files.mod_json;
+	let annualHigh = req.files.high_json;
 
-	// if one file is uploaded, make it an array
-	if (!Array.isArray(files)) {
-		files = [files];
-	}
+	// handle annual erosion risk files
+	if (annualYear && annualLow && annualMedium && annualHigh) {
+		files = { low: annualLow, mod: annualMedium, high: annualHigh };
+		for (const riskLevel of Object.keys(files)) {
+			file = files[riskLevel];
 
-	if (!files || files.length === 0) {
-		return res.status(400).send("No files were uploaded.");
-	}
-
-	for (const file of files) {
-		if (file.name.split(".").pop() !== "json") {
-			return res.status(400).send("Only JSON files are allowed.");
-		}
-	}
-
-	// get the files with name "Annual_Erosion_Risk.json"
-	const annualErosionRiskFiles = files.filter(file => file.name === "Annual_Erosion_Risk.json");
-	if (annualErosionRiskFiles.length > 0) {
-		for (const file of annualErosionRiskFiles) {
-			
 			// upload file to firebase
-			const filename = (new Date()).toISOString() + ".json";
-			const storageRef = ref(storage, `default_links/${filename}`);
+			const filename = annualYear + "_" + riskLevel + ".json";
+			const storageRef = ref(storage, `annual_risks/${filename}`);
 			const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
 			uploadTask.on("state_changed",
 				(snapshot) => {
@@ -164,8 +204,10 @@ app.post("/admin/upload", async function (req, res, next) {
 				getDownloadURL(snapshot.ref).then((downloadURL) => {
 					console.log("File available at", downloadURL);
 
-					const q = "INSERT INTO default_links (url) VALUES ($1)";
-					const values = [downloadURL];
+					const q = "INSERT INTO annual_links (year, risk_level, url) VALUES ($1, $2, $3) ON CONFLICT (year, risk_level) DO UPDATE SET url = $3";
+					const values = [annualYear, 
+									riskLevel === "low" ? 0 : riskLevel === "mod" ? 1 : 2,
+									downloadURL];
 					db.query(q, values, (err, result) => {
 						if (err) {
 							console.error("error running query", q, err);
@@ -175,26 +217,43 @@ app.post("/admin/upload", async function (req, res, next) {
 				});
 			});
 		}
+		return res.status(200).send("Files uploaded");
 	}
 
-	// check if there are other files than "Annual_Erosion_Risk.json"
-	const otherFiles = files.filter(file => file.name !== "Annual_Erosion_Risk.json");
-	if (otherFiles.length > 0) {
-		db.query("DELETE FROM links", [], async (err, result) => {
+	let waterLevelFiles = req.files.batch_json;
+
+	if (!waterLevelFiles || waterLevelFiles.length === 0) {
+		return res.status(400).send("No files were uploaded.");
+	}
+	
+	// if one file is uploaded, make it an array
+	if (!Array.isArray(waterLevelFiles)) {
+		waterLevelFiles = [waterLevelFiles];
+	}
+
+	for (const file of waterLevelFiles) {
+		if (file.name.split(".").pop() !== "json") {
+			return res.status(400).send("Only JSON files are allowed.");
+		}
+	}
+
+	// handle water level files
+	if (waterLevelFiles.length > 0) {
+		db.query("DELETE FROM waterlevel_links", [], async (err, result) => {
 			if (err) {
-				console.error("error deleting from links table", err);
+				console.error("error deleting from waterlevel_links table", err);
 			}
 		});
 	}
 
-	for (const file of otherFiles) {
+	for (const file of waterLevelFiles) {
 
 		// get water level from file name
 		const waterLevel = file.name.replace(".json", "");
 
 		// upload file to firebase
-		const filename = waterLevel + "_" + (new Date()).toISOString() + ".json";
-		const storageRef = ref(storage, `water-level-marked/${filename}`);
+		const filename = waterLevel + ".json";
+		const storageRef = ref(storage, `waterlevel_risks/${filename}`);
 		const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
 		uploadTask.on("state_changed",
 			(snapshot) => {
@@ -211,7 +270,7 @@ app.post("/admin/upload", async function (req, res, next) {
 			getDownloadURL(snapshot.ref).then((downloadURL) => {
 				console.log("File available at", downloadURL);
 
-				const q = "INSERT INTO links (water_level, url) VALUES ($1, $2)";
+				const q = "INSERT INTO waterlevel_links (water_level, url) VALUES ($1, $2)";
 				const values = [waterLevel, downloadURL];
 				db.query(q, values, (err, result) => {
 					if (err) {

@@ -28,7 +28,7 @@
         "tags": [
           "link"
         ],
-        "summary": "fetch link of the default geo json file with the closest water level",
+        "summary": "fetch list of years, current year and its low, moderate and high water levels",
         "operationId": "fetchLink",
         "responses": {
           "200": {
@@ -36,7 +36,39 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LinkEntry"
+                  "$ref": "#/components/schemas/FetchLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/link?year={year}": {
+      "get": {
+        "tags": [
+          "link"
+        ],
+        "summary": "fetch the specified year's low, moderate and high water levels",
+        "operationId": "fetchLinkYear",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Successful operation",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchLinkYearResponse"
                 }
               }
             }
@@ -49,7 +81,7 @@
         "tags": [
           "link"
         ],
-        "summary": "fetch link of the geo json file with the closest water level given",
+        "summary": "fetch link of geojson file for a specific (closest) water level",
         "operationId": "fetchLinkWaterLevel",
         "parameters": [
           {
@@ -68,7 +100,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LinkEntry"
+                  "$ref": "#/components/schemas/WaterLevelResponse"
                 }
               }
             }
@@ -82,7 +114,53 @@
   },
   "components": {
     "schemas": {
-      "LinkEntry": {
+      "FetchLinkResponse": {
+        "type": "object",
+        "properties": {
+          "years": {
+            "type": "list",
+            "example": [2019, 2020, 2021]
+          },
+          "year": {
+            "type": "number",
+            "example": 2021
+          },
+          "low": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/annual_risks%2F1970_low.json?alt=media&token=cbc110e4-399f-4032-9031-6dd087e3bc68"
+          },
+          "mod": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/annual_risks%2F1970_mod.json?alt=media&token=6782ad98-acc1-42eb-b8ed-a2adfbcd3350"
+          },
+          "high": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/annual_risks%2F1970_high.json?alt=media&token=a6e363f9-c086-42e7-9792-883e4b653239"
+          }
+        }
+      },
+      "FetchLinkYearResponse": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2021
+          },
+          "low": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/annual_risks%2F1970_low.json?alt=media&token=cbc110e4-399f-4032-9031-6dd087e3bc68"
+          },
+          "mod": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/annual_risks%2F1970_mod.json?alt=media&token=6782ad98-acc1-42eb-b8ed-a2adfbcd3350"
+          },
+          "high": {
+            "type": "string",
+            "example": "https://firebasestorage.googleapis.com/v0/b/ews-re-9d81a.appspot.com/o/annual_risks%2F1970_high.json?alt=media&token=a6e363f9-c086-42e7-9792-883e4b653239"
+          }
+        }
+      },
+      "WaterLevelResponse": {
         "type": "object",
         "properties": {
           "water_level": {
