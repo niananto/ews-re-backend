@@ -292,8 +292,8 @@ app.use(function (req, res) {
 
 /////////////////////////////////////////////////
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, function () {
+app.listen(PORT, '0.0.0.0', function () {
 	console.log(`server started at http://localhost:${PORT}`);
 });
