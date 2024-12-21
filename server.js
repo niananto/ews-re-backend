@@ -145,7 +145,7 @@ app.get("/link", async function (req, res, next) {
 
 	// get the link for the specified water level irrespective of the year
 	else {
-		const q = "SELECT * FROM waterlevel_links ORDER BY abs(water_level - $1) ASC LIMIT 1";
+		const q = "SELECT * FROM waterlevel_risklevel_links ORDER BY abs(water_level - $1) ASC, risk_level ASC LIMIT 3";
 		const params = [waterLevel];
 		db.query(q, params, (err, result) => {
 			if (err) {
@@ -155,7 +155,13 @@ app.get("/link", async function (req, res, next) {
 			if (result.rows.length === 0) {
 				return res.status(404).send("No entry found");
 			}
-			return res.status(200).json(result.rows[0]);
+			r = {
+				water_level: result.rows[0].water_level,
+				low: result.rows[0].url,
+				mod: result.rows[1].url,
+				high: result.rows[2].url
+			}
+			return res.status(200).json(r);
 		});
 	}
 });
@@ -239,21 +245,27 @@ app.post("/admin/upload", async function (req, res, next) {
 
 	// handle water level files
 	if (waterLevelFiles.length > 0) {
-		db.query("DELETE FROM waterlevel_links", [], async (err, result) => {
+		db.query("DELETE FROM waterlevel_risklevel_links", [], async (err, result) => {
 			if (err) {
-				console.error("error deleting from waterlevel_links table", err);
+				console.error("error deleting from waterlevel_risklevel_links table", err);
 			}
 		});
 	}
 
 	for (const file of waterLevelFiles) {
 
-		// get water level from file name
-		const waterLevel = file.name.replace(".json", "");
+		// get water level and risk level from file name
+		const waterLevel = file.name.split("_")[0]
+		const riskLevel_str = file.name.split("_").pop().split(".")[0]
+		let riskLevel = -1
+		if(riskLevel_str == "low") {riskLevel = 0}
+		else if(riskLevel_str == "mod") {riskLevel = 1}
+		else {riskLevel = 2}
+		console.log(waterLevel, riskLevel_str, riskLevel)
 
 		// upload file to firebase
-		const filename = waterLevel + ".json";
-		const storageRef = ref(storage, `waterlevel_risks/${filename}`);
+		const filename = file.name
+		const storageRef = ref(storage, `waterlevel_risklevel_files/${filename}`);
 		const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
 		uploadTask.on("state_changed",
 			(snapshot) => {
@@ -270,8 +282,8 @@ app.post("/admin/upload", async function (req, res, next) {
 			getDownloadURL(snapshot.ref).then((downloadURL) => {
 				console.log("File available at", downloadURL);
 
-				const q = "INSERT INTO waterlevel_links (water_level, url) VALUES ($1, $2)";
-				const values = [waterLevel, downloadURL];
+				const q = "INSERT INTO waterlevel_risklevel_links (water_level, risk_level, url) VALUES ($1, $2, $3)";
+				const values = [waterLevel, riskLevel, downloadURL];
 				db.query(q, values, (err, result) => {
 					if (err) {
 						console.error("error running query", q, err);

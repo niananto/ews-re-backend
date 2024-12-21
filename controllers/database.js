@@ -15,16 +15,16 @@ db.connect(function (err) {
   return console.log('connected to postgres');
 });
 
-const q1 = `CREATE TABLE waterlevel_links (
-  water_level NUMERIC PRIMARY KEY,
-  url VARCHAR(255) NOT NULL
-)`
-db.query(q1, [], (err, result) => {
-  if (err) {
-    return console.error("waterlevel_links table already exists");
-  }
-  console.log("waterlevel_links table created");
-});
+// const q1 = `CREATE TABLE waterlevel_links (
+//   water_level NUMERIC PRIMARY KEY,
+//   url VARCHAR(255) NOT NULL
+// )`
+// db.query(q1, [], (err, result) => {
+//   if (err) {
+//     return console.error("waterlevel_links table already exists");
+//   }
+//   console.log("waterlevel_links table created");
+// });
 
 // const q2 = `CREATE TABLE default_links (
 //   updated_on TIMESTAMP PRIMARY KEY DEFAULT NOW(),
@@ -48,6 +48,19 @@ db.query(q3, [], (err, result) => {
     return console.error("annual_links table already exists");
   }
   console.log("annual_links table created");
+});
+
+const q4 = `CREATE TABLE waterlevel_risklevel_links (
+  water_level NUMERIC,
+  risk_level INTEGER,
+  url VARCHAR(255) NOT NULL,
+  PRIMARY KEY(water_level, risk_level)
+)`
+db.query(q4, [], (err, result) => {
+  if (err) {
+    return console.error("waterlevel_risklevel_links table already exists");
+  }
+  console.log("waterlevel_risklevel_links table created");
 });
 
 module.exports.db = db;
