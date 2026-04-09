@@ -17,10 +17,7 @@ PORT=
 ADMIN_USERNAME=
 ADMIN_PASSWORD=
 DB_URI=<postgres>
-FIREBASE_API_KEY=
-FIREBASE_AUTH_DOMAIN=
-FIREBASE_PROJECT_ID=
 FIREBASE_STORAGE_BUCKET=
-FIREBASE_MESSAGING_SENDER_ID=
-FIREBASE_APP_ID=
 ```
+
+For Firebase Admin SDK authentication, place your service account key at `sa-key.json` in the project root.

@@ -22,11 +22,25 @@ const db = require("./controllers/database").db;
 
 // firebase
 const storage = require("./controllers/firebase").storage;
-const getStorage = require("firebase/storage").getStorage;
-const ref = require("firebase/storage").ref;
-const getDownloadURL = require("firebase/storage").getDownloadURL;
-const uploadBytesResumable = require("firebase/storage").uploadBytesResumable;
-const uploadBytes = require("firebase/storage").uploadBytes;
+
+const getSignedUrlForFile = async (storagePath) => {
+	const fileRef = storage.file(storagePath);
+	const [downloadURL] = await fileRef.getSignedUrl({
+		action: "read",
+		expires: "03-09-2491", // Far-future expiry for stable links.
+	});
+	return downloadURL;
+};
+
+const uploadJsonToBucket = async (storagePath, fileBuffer) => {
+	const fileRef = storage.file(storagePath);
+	await fileRef.save(fileBuffer, {
+		contentType: "application/json",
+		resumable: false,
+		metadata: { contentType: "application/json" },
+	});
+	return fileRef;
+};
 
 const app = express();
 app.use(express.json());
@@ -193,35 +207,21 @@ app.post("/admin/upload", async function (req, res, next) {
 
 			// upload file to firebase
 			const filename = annualYear + "_" + riskLevel + ".json";
-			const storageRef = ref(storage, `annual_risks/${filename}`);
-			const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
-			uploadTask.on("state_changed",
-				(snapshot) => {
-					const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-					console.log(`Upload ${filename} is ${progress}% done`);
-				},
-				(error) => {
-					console.error(error);
-				}
-			);
+			const storagePath = `annual_risks/${filename}`;
+			try {
+				await uploadJsonToBucket(storagePath, file.data);
+				const downloadURL = await getSignedUrlForFile(storagePath);
+				console.log("File available at", downloadURL);
 
-			// get the url and save into the database
-			uploadTask.then((snapshot) => {
-				getDownloadURL(snapshot.ref).then((downloadURL) => {
-					console.log("File available at", downloadURL);
-
-					const q = "INSERT INTO annual_links (year, risk_level, url) VALUES ($1, $2, $3) ON CONFLICT (year, risk_level) DO UPDATE SET url = $3";
-					const values = [annualYear, 
-									riskLevel === "low" ? 0 : riskLevel === "mod" ? 1 : 2,
-									downloadURL];
-					db.query(q, values, (err, result) => {
-						if (err) {
-							console.error("error running query", q, err);
-							return res.status(500).send("Couldn't read file");
-						}
-					});
-				});
-			});
+				const q = "INSERT INTO annual_links (year, risk_level, url) VALUES ($1, $2, $3) ON CONFLICT (year, risk_level) DO UPDATE SET url = $3";
+				const values = [annualYear,
+								riskLevel === "low" ? 0 : riskLevel === "mod" ? 1 : 2,
+								downloadURL];
+				await db.query(q, values);
+			} catch (error) {
+				console.error("Error uploading annual file", filename, error);
+				return res.status(500).send("Couldn't upload file");
+			}
 		}
 		return res.status(200).send("Files uploaded");
 	}
@@ -245,11 +245,12 @@ app.post("/admin/upload", async function (req, res, next) {
 
 	// handle water level files
 	if (waterLevelFiles.length > 0) {
-		db.query("DELETE FROM waterlevel_risklevel_links", [], async (err, result) => {
-			if (err) {
-				console.error("error deleting from waterlevel_risklevel_links table", err);
-			}
-		});
+		try {
+			await db.query("DELETE FROM waterlevel_risklevel_links", []);
+		} catch (err) {
+			console.error("error deleting from waterlevel_risklevel_links table", err);
+			return res.status(500).send("Couldn't update existing entries");
+		}
 	}
 
 	for (const file of waterLevelFiles) {
@@ -265,33 +266,20 @@ app.post("/admin/upload", async function (req, res, next) {
 
 		// upload file to firebase
 		const filename = file.name
-		const storageRef = ref(storage, `waterlevel_risklevel_files/${filename}`);
-		const uploadTask = uploadBytesResumable(storageRef, file.data, { contentType: "application/json" });
-		uploadTask.on("state_changed",
-			(snapshot) => {
-				const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-				console.log(`Upload ${filename} is ${progress}% done`);
-			},
-			(error) => {
-				console.error(error);
-			}
-		);
+		const storagePath = `waterlevel_risklevel_files/${filename}`;
 
-		// get the url and save into the database
-		uploadTask.then((snapshot) => {
-			getDownloadURL(snapshot.ref).then((downloadURL) => {
-				console.log("File available at", downloadURL);
+		try {
+			await uploadJsonToBucket(storagePath, file.data);
+			const downloadURL = await getSignedUrlForFile(storagePath);
+			console.log("File available at", downloadURL);
 
-				const q = "INSERT INTO waterlevel_risklevel_links (water_level, risk_level, url) VALUES ($1, $2, $3)";
-				const values = [waterLevel, riskLevel, downloadURL];
-				db.query(q, values, (err, result) => {
-					if (err) {
-						console.error("error running query", q, err);
-						return res.status(500).send("Couldn't read file");
-					}
-				});
-			});
-		});
+			const q = "INSERT INTO waterlevel_risklevel_links (water_level, risk_level, url) VALUES ($1, $2, $3)";
+			const values = [waterLevel, riskLevel, downloadURL];
+			await db.query(q, values);
+		} catch (err) {
+			console.error("error uploading or saving water level file", filename, err);
+			return res.status(500).send("Couldn't upload file");
+		}
 	}
 
 	res.status(200).send("Files uploaded");
