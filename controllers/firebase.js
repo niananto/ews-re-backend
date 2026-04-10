@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const admin = require("firebase-admin");
-const serviceAccount = require("/etc/secrets/sa-key.json");
+const serviceAccount = require("sa-key.json");
 
 // Avoid re-initializing the default app during local reloads.
 if (!admin.apps.length) {
