@@ -23,13 +23,9 @@ const db = require("./controllers/database").db;
 // firebase
 const storage = require("./controllers/firebase").storage;
 
-const getSignedUrlForFile = async (storagePath) => {
-	const fileRef = storage.file(storagePath);
-	const [downloadURL] = await fileRef.getSignedUrl({
-		action: "read",
-		expires: "03-09-2491", // Far-future expiry for stable links.
-	});
-	return downloadURL;
+const getPublicUrlForFile = (storagePath) => {
+	const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
+	return `https://storage.googleapis.com/${bucketName}/${storagePath}`;
 };
 
 const uploadJsonToBucket = async (storagePath, fileBuffer) => {
@@ -39,6 +35,7 @@ const uploadJsonToBucket = async (storagePath, fileBuffer) => {
 		resumable: false,
 		metadata: { contentType: "application/json" },
 	});
+	await fileRef.makePublic();
 	return fileRef;
 };
 
@@ -210,7 +207,7 @@ app.post("/admin/upload", async function (req, res, next) {
 			const storagePath = `annual_risks/${filename}`;
 			try {
 				await uploadJsonToBucket(storagePath, file.data);
-				const downloadURL = await getSignedUrlForFile(storagePath);
+				const downloadURL = getPublicUrlForFile(storagePath);
 				console.log("File available at", downloadURL);
 
 				const q = "INSERT INTO annual_links (year, risk_level, url) VALUES ($1, $2, $3) ON CONFLICT (year, risk_level) DO UPDATE SET url = $3";
@@ -270,7 +267,7 @@ app.post("/admin/upload", async function (req, res, next) {
 
 		try {
 			await uploadJsonToBucket(storagePath, file.data);
-			const downloadURL = await getSignedUrlForFile(storagePath);
+			const downloadURL = getPublicUrlForFile(storagePath);
 			console.log("File available at", downloadURL);
 
 			const q = "INSERT INTO waterlevel_risklevel_links (water_level, risk_level, url) VALUES ($1, $2, $3)";
